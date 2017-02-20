@@ -27,10 +27,11 @@ package feistel;/*
  */
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -48,27 +49,57 @@ public class Main {
         final byte[] tweak = "Here is my tweak".getBytes();
 
 
-        final int range = 999999;
-        final BigInteger modulus = BigInteger.valueOf(range);
+        //final int range = 999999;
+        final BigInteger modulus = new BigInteger("99999999");
 
         Set<BigInteger> results = new HashSet<BigInteger>();
-        int counter = 0;
-        for (int i = 100000; i < range; i++) {
-            BigInteger enc = encrypt(modulus, BigInteger.valueOf(i), key, tweak);
+        List<BigInteger> sequence = new ArrayList<>();
+        long counter = 0;
+        BigInteger first = new BigInteger("10000000");
+        long time = 0;
+        while (true) {
+            long startTime = System.nanoTime();;
+            BigInteger enc = encrypt(modulus, first, key, tweak);
+            long endTime = System.nanoTime();
+            time += (endTime - startTime);
             BigInteger dec = decrypt(modulus, enc, key, tweak);
             //System.out.println(i + ": " + enc + " " + dec);
-            if (dec.longValue() != i) {
-                throw new IllegalStateException("enc (" + enc + ") != i(" + i + ")");
+            if (!Objects.equals(dec.toString(), first.toString())) {
+                throw new IllegalStateException("enc (" + enc + ") != i(" + first.toString() + ")");
             }
             results.add(enc);
+            sequence.add(enc);
             if (results.size() != counter + 1) {
+                System.out.println(results.size());
                 throw new IllegalStateException("duplicate enc: " + enc);
             }
-            if (enc.longValue() < 0 || enc.longValue() > range) {
-                throw new IllegalStateException("enc " + enc + " out of range " + range);
-            }
+          //  if (enc.longValue() < 0 || enc.longValue() > range) {
+            //    throw new IllegalStateException("enc " + enc + " out of range " + range);
+           // }
             counter++;
+            first = first.add(BigInteger.ONE);
+            if (counter % 10000 == 0) {
+                System.out.println(first);
+            }
+            if (first.toString().equals("999999999")) {
+                break;
+            }
+            if (counter == 10000) {
+                break;
+            }
         }
+        double average = time / 10000;
+        System.out.println(average / 1000 );
+        FileOutputStream stream = new FileOutputStream("out");
+        PrintWriter writer = new PrintWriter(stream);
+        for (BigInteger bigInteger: sequence) {
+            //String bits = "";
+            //for (int i = 0; i < bigInteger.bitLength(); i++) {
+              //  bits += bigInteger.testBit(i) ? 1 : 0;
+           // }
+            writer.println(bigInteger.toString());
+        }
+        writer.close();
     }
 
     // Normally FPE is for SSNs, CC#s, etc, nothing too big
@@ -83,7 +114,7 @@ public class Main {
     /// <param name="key">Secret key</param>
     /// <param name="tweak">Non-secret parameter, think of it as an IV - use the same one used to encrypt</param>
     /// <returns>The decrypted number</returns>
-    public static BigInteger decrypt(BigInteger modulus, BigInteger ciphertext, byte[] key, byte[] tweak) throws Exception {
+    private static BigInteger decrypt(BigInteger modulus, BigInteger ciphertext, byte[] key, byte[] tweak) throws Exception {
         FPE_Encryptor fpeEncryptor = new FPE_Encryptor(key, modulus, tweak);
 
         BigInteger[] a_b = NumberTheory.factor(modulus);
@@ -188,7 +219,7 @@ public class Main {
             mac_n_t = mac.doFinal(ms.toByteArray());
         }
 
-        public BigInteger F(int round_no, BigInteger R) throws IOException {
+        BigInteger F(int round_no, BigInteger R) throws IOException {
             byte[] r_bin = R.toByteArray();
             ByteArrayOutputStream ms = new ByteArrayOutputStream();
             ms.write(mac_n_t);

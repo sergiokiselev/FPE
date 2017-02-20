@@ -31,11 +31,16 @@ public class Prefix {
             System.out.println(prefix.index + " " + prefix.weight);
         }
         Set<Integer> integers = new HashSet<>();
+        long durationsSum = 0;
         for (int number : numbers) {
+            long startTime = System.nanoTime();
             int encoded = encode(number, prefices);
-            System.out.println(encoded);
+            durationsSum += System.nanoTime() - startTime;
+            //System.out.println(encoded);
             integers.add(encoded);
         }
+        double average = durationsSum / numbers.size();
+        System.out.println(average);
         return integers;
     }
 

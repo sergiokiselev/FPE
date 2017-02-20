@@ -30,5 +30,11 @@ public class TestPrefix {
         Set<Integer> result = prefix.encrypt(toEncode, secretKey, ivParameterSpec);
         System.out.println(result.size());
     }
-
 }
+
+
+
+// Сравнить быстродействие. 2 вида процессоров, разная загрузка
+// Зависимость быстродействия от длины числа 6 - 16
+
+// NIST RAND

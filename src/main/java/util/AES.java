@@ -22,7 +22,7 @@ public class AES {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        keyGen.init(128);
+        keyGen.init(192);
         return keyGen.generateKey();
     }
 

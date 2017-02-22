@@ -51,7 +51,7 @@ public class EME2IntegerCipher extends IntegerCipher {
 	 */
 	public EME2IntegerCipher(IntegerMessageSpace messageSpace) {
 		super(messageSpace);
-		if (messageSpace.getOrder().bitLength() < MIN_BIT_LENGTH) throw new IllegalArgumentException("Message space must be bigger than 128 bits");
+		//if (messageSpace.getOrder().bitLength() < MIN_BIT_LENGTH) throw new IllegalArgumentException("Message space must be bigger than 128 bits");
 	}
 	
 	/**

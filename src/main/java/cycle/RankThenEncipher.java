@@ -99,10 +99,6 @@ public class RankThenEncipher<M> extends FPECipher<M> {
 		this.integerCipher = integerCipher;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @throws OutsideMessageSpaceException if plaintext is outside the message space.
-	 */
 	@Override
 	public M encrypt(M plaintext, Key key, byte[] tweak) {
 		BigInteger rank = getMessageSpace().rank(plaintext);
@@ -111,10 +107,6 @@ public class RankThenEncipher<M> extends FPECipher<M> {
 		return ciphertext;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @throws OutsideMessageSpaceException if ciphertext is outside the message space.
-	 */
 	@Override
 	public M decrypt(M ciphertext, Key key, byte[] tweak) {
 		BigInteger rankEnc = getMessageSpace().rank(ciphertext);

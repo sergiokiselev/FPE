@@ -162,11 +162,10 @@ public class FFXIntegerCipher extends IntegerCipher {
         byte[] p = new byte[]{0, VERS, METHOD, ADDITION, RADIX, (byte) msBitLength, (byte) middleIndex, (byte) nrOfRounds, 0, 0, 0, 0, 0, 0, 0, (byte) tweak.length}; //total 16 bytes
         p = aesCipher.doFinal(p);
 
-
         //Iterate the feistel rounds
         if (encryption) {
             for (int i = 0; i < nrOfRounds; i++) {
-                a.xor(roundFunction(aesCipher, p, msBitLength, tweak, i, b));
+                a.xor(roundFunction(aesCipher, p, msBitLength, tweak, i, b, key.getKey(16)));
                 temp = a;
                 a = b;
                 b = temp;
@@ -176,7 +175,7 @@ public class FFXIntegerCipher extends IntegerCipher {
                 temp = b;
                 b = a;
                 a = temp;
-                a.xor(roundFunction(aesCipher, p, msBitLength, tweak, i, b));
+                a.xor(roundFunction(aesCipher, p, msBitLength, tweak, i, b, key.getKey(16)));
             }
         }
 
@@ -202,7 +201,7 @@ public class FFXIntegerCipher extends IntegerCipher {
      * @return returns a ciphertext or a plaintext, depending on encryption or decryption
      * @throws GeneralSecurityException wrong security parameter in AES-CBC-MAC. Should not happen because we control/check all parameters.
      */
-    private BitSet roundFunction(Cipher aesCipher, byte[] p, int msBitLength, byte[] tweak, int roundNr, BitSet b) throws GeneralSecurityException {
+    private BitSet roundFunction(Cipher aesCipher, byte[] p, int msBitLength, byte[] tweak, int roundNr, BitSet b, byte[] key) throws GeneralSecurityException {
         int middleIndex = (msBitLength + 1) / 2;
 
         // Construct the variable part q of the AES input (changes every round)
@@ -210,6 +209,16 @@ public class FFXIntegerCipher extends IntegerCipher {
         byte[] paddedTweak = new byte[1 + tweak.length + ((((-tweak.length - 9) % 16) + 16) % 16)]; //  (%16)+16)%16 is necessary to prevent negative modulo values
         System.arraycopy(tweak, 0, paddedTweak, 0, tweak.length);
         paddedTweak[paddedTweak.length - 1] = (byte) roundNr;
+
+//        byte[] paddedKKey = new byte[1 + key.length + ((((-key.length - 9) % 16) + 16) % 16)];
+//        System.arraycopy(key, 0, paddedKKey, 0, key.length);
+//        paddedKKey[paddedKKey.length - 1] = (byte) roundNr;
+//        byte[] s = concatByteArrays(paddedKKey, new byte [] {60,93,-94,-128,
+//                0,127,23,43,
+//                -19,120,86,94,
+//                -62,101,14,21});
+//
+//        paddedTweak = xorByteArray(paddedTweak, s);
 
         // Second part of q is the actual plaintext b which is copied into a byte array of 8 bytes
         byte[] paddedB = new byte[8];

@@ -6,6 +6,7 @@ import util.AES;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -14,44 +15,14 @@ import java.util.*;
 
 public class Prefix {
 
-    public Set<Integer> encrypt(List<Integer> numbers, SecretKey secretKey, IvParameterSpec ivParameterSpec) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException {
-        List<InnerPrefix> prefices = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            byte[] sss = AES.encrypt(ByteBuffer.allocate(4).putInt(i).array(), secretKey, ivParameterSpec);
-            InnerPrefix prefix = new InnerPrefix(new BASE64Encoder().encode(sss), i);
-            prefices.add(prefix);
-        }
-        Collections.sort(prefices, new Comparator<InnerPrefix>() {
-            @Override
-            public int compare(InnerPrefix o1, InnerPrefix o2) {
-                return o1.weight.compareTo(o2.weight);
-            }
-        });
-        for (InnerPrefix prefix : prefices) {
-            System.out.println(prefix.index + " " + prefix.weight);
-        }
-        Set<Integer> integers = new HashSet<>();
-        long durationsSum = 0;
-        for (int number : numbers) {
-            long startTime = System.nanoTime();
-            int encoded = encode(number, prefices);
-            durationsSum += System.nanoTime() - startTime;
-            //System.out.println(encoded);
-            integers.add(encoded);
-        }
-        double average = durationsSum / numbers.size();
-        System.out.println(average);
-        return integers;
-    }
-
-    private static int encode(int number, List<InnerPrefix> prefices) {
-        int result = 0;
+    public BigInteger encode(BigInteger number, List<InnerPrefix> prefices) {
+        BigInteger result = new BigInteger("0");
         int e = 0;
-        while (number > 0) {
-            int buf = number % 10;
-            number /= 10;
-            int encoded = prefices.get(buf).index;
-            result += Math.pow(10, e) * encoded;
+        while (number.toString().compareTo("0") > 0) {
+            BigInteger buf = number.mod(BigInteger.TEN);
+            number = number.divide(BigInteger.TEN);
+            int encoded = prefices.get(buf.intValue()).index;
+            result = result.add(BigInteger.TEN.pow(e).multiply(new BigInteger("" + encoded)));
             e++;
         }
         return result;

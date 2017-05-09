@@ -16,10 +16,7 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: NotePad.by
@@ -52,7 +49,39 @@ public class TestCipher {
 //        System.out.println(BitSet.valueOf(encrypted));
 //    }
     private static  Key key;
-    private static byte[] keyArray = new byte[]{60,93,-94,-128,0,127,23,43,-19,120,86,94,-62,101,14,21,64,93,-94,-128,0,127,23,43,-19,120,86,94,-62,101,15,29,64,93,-94,-128,0,127,23,43,-19,120,86,94,-62,101,14,30,64,93,-94,-128,0,127,23,43,-19,120,86,94,-62,101,14,22};
+//    private static byte[] keyArray = new byte[]{60,93,-94,-128,
+//            0,127,23,43,
+//            -19,120,86,94,
+//            -62,101,14,21,
+//            64,93,-94,-128,
+//            0,127,23,43,
+//            -19,120,86,94,
+//            -62,101,15,29,
+//            64,93,-94,-128,
+//            0,127,23,43,
+//            -19,120,86,94,
+//            -62,101,14,30,
+//            64,93,-94,-128,
+
+    //            0,127,23,43,
+//            -19,120,86,94,
+//            -62,101,14,22};
+private static byte[] keyArray = new byte[]{60,93,-94,-128,
+            0,127,23,43,
+            -19,120,86,94,
+            -62,101,14,21,
+            64,93,-94,-128,
+            0,127,23,43,
+            -19,120,86,94,
+            -62,101,15,29,
+            64,93,-94,-128,
+            0,127,23,43,
+            -19,120,86,94,
+            -62,101,14,30,
+            64,93,-94,-128,
+            0,127,23,43,
+            -19,120,86,94,
+            -62,101,14,22};
     private static byte[] tweak = new byte[37];
     private static byte[] plaintext = new byte[43];
     private static byte[] msMax = new byte[500];
@@ -63,37 +92,45 @@ public class TestCipher {
         plaintext[0] = (byte)127;
         msMax[0] =  (byte)127;
         key = new Key(keyArray);
-        BigInteger maxValue = new BigInteger("999999999");
-        System.out.println(maxValue);
-        //intMS = new IntegerMessageSpace(maxValue);
-        intMS = new IntegerMessageSpace(new BigInteger("999999999"));
-        EME2IntegerCipher eme2 = new EME2IntegerCipher(intMS);
         BigInteger plaintext2 = BigInteger.valueOf(511);
-        BigInteger ciphertext = eme2.encrypt(plaintext2, key,tweak);
-        BigInteger decPlaintext = eme2.decrypt(ciphertext, key,tweak);
         System.out.println(plaintext2);
-        System.out.println(decPlaintext);
         Set<BigInteger> res = new HashSet<>();
-        long counter = 0;
-        BigInteger first = new BigInteger("100000000");
-        PrintWriter writer = new PrintWriter("outEME2");
-        while (true) {
-            BigInteger encrypted = eme2.encrypt(first, key, tweak);
-            res.add(encrypted);
-            String bits = "";
-            for (int i = 0; i < encrypted.bitLength(); i++) {
-              bits += encrypted.testBit(i) ? 1 : 0;
-             }
-            writer.println(bits);
-            first = first.add(BigInteger.ONE);
-            counter++;
-            if (counter % 1000 == 0)
-            System.out.println(encrypted);
-            if ("100100000".equals(first.toString())) {
-                break;
+        long counter = 8;
+        List<CycleStruct> cs = new ArrayList<>();
+        //cs.add(new CycleStruct(new BigInteger("50000000"), new BigInteger("99999999"), new BigInteger("50010000")));
+        //cs.add(new CycleStruct(new BigInteger("500000000"), new BigInteger("999999999"), new BigInteger("500010000")));
+        //cs.add(new CycleStruct(new BigInteger("5000000000"), new BigInteger("9999999999"), new BigInteger("5000100000")));
+        //cs.add(new CycleStruct(new BigInteger("50000000000"), new BigInteger("99999999999"), new BigInteger("50000010000")));
+//        cs.add(new CycleStruct(new BigInteger("500000000000"), new BigInteger("999999999999"), new BigInteger("500000010000")));
+//        cs.add(new CycleStruct(new BigInteger("5000000000000"), new BigInteger("9999999999999"), new BigInteger("5000000010000")));
+//        cs.add(new CycleStruct(new BigInteger("50000000000000"), new BigInteger("99999999999999"), new BigInteger("50000000010000")));
+//        cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000010000")));
+        cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000000040000")));
+        for (CycleStruct c: cs) {
+            PrintWriter writer = new PrintWriter("e" + counter);
+            intMS = new IntegerMessageSpace(c.getMax());
+            FFXIntegerCipher eme2 = new FFXIntegerCipher(intMS);
+            long times = 0;
+            while (true) {
+                long start = System.nanoTime();
+                BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
+                long duration = System.nanoTime() - start;
+                times += duration;
+                res.add(encrypted);
+                String bits = "";
+                for (int i = 0; i < encrypted.bitLength(); i++) {
+                    bits += encrypted.testBit(i) ? 1 : 0;
+                }
+                writer.println(bits);
+                c.setFirst(c.getFirst().add(BigInteger.ONE));
+                if (c.getStop().toString().equals(c.getFirst().toString())) {
+                    break;
+                }
             }
+            double average = (double)times / 1000.;
+            System.out.println(counter + " " + (average / 1000000));
+            writer.close();
+            counter++;
         }
-        writer.close();
-        System.out.println(res.size());
     }
 }

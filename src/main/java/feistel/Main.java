@@ -26,6 +26,8 @@ package feistel;/*
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+import cycle.CycleStruct;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -50,56 +52,66 @@ public class Main {
 
 
         //final int range = 999999;
-        final BigInteger modulus = new BigInteger("99999999");
+        //final BigInteger modulus = new BigInteger("99999999");
 
         Set<BigInteger> results = new HashSet<BigInteger>();
         List<BigInteger> sequence = new ArrayList<>();
-        long counter = 0;
-        BigInteger first = new BigInteger("10000000");
-        long time = 0;
-        while (true) {
-            long startTime = System.nanoTime();;
-            BigInteger enc = encrypt(modulus, first, key, tweak);
-            long endTime = System.nanoTime();
-            time += (endTime - startTime);
-            BigInteger dec = decrypt(modulus, enc, key, tweak);
-            //System.out.println(i + ": " + enc + " " + dec);
-            if (!Objects.equals(dec.toString(), first.toString())) {
-                throw new IllegalStateException("enc (" + enc + ") != i(" + first.toString() + ")");
+        long counter = 8;
+        List<CycleStruct> cs = new ArrayList<>();
+        cs.add(new CycleStruct(new BigInteger("10000000"), new BigInteger("99999999"), new BigInteger("10010000")));
+        cs.add(new CycleStruct(new BigInteger("100000000"), new BigInteger("999999999"), new BigInteger("100010000")));
+        cs.add(new CycleStruct(new BigInteger("1000000000"), new BigInteger("9999999999"), new BigInteger("1000010000")));
+        cs.add(new CycleStruct(new BigInteger("10000000000"), new BigInteger("99999999999"), new BigInteger("10000010000")));
+        cs.add(new CycleStruct(new BigInteger("100000000000"), new BigInteger("999999999999"), new BigInteger("100000010000")));
+        cs.add(new CycleStruct(new BigInteger("1000000000000"), new BigInteger("9999999999999"), new BigInteger("1000000010000")));
+        cs.add(new CycleStruct(new BigInteger("10000000000000"), new BigInteger("99999999999999"), new BigInteger("10000000010000")));
+        cs.add(new CycleStruct(new BigInteger("100000000000000"), new BigInteger("999999999999999"), new BigInteger("100000000010000")));
+        cs.add(new CycleStruct(new BigInteger("1000000000000000"), new BigInteger("9999999999999999"), new BigInteger("1000000000040000")));
+        cs.add(new CycleStruct(new BigInteger("10000000"), new BigInteger("99999999"), new BigInteger("10010000")));
+        for (CycleStruct c: cs) {
+            long time = 0;
+            while (true) {
+                long startTime = System.nanoTime();
+                BigInteger enc = encrypt(c.getMax(), c.getFirst(), key, tweak);
+                long endTime = System.nanoTime();
+                time += (endTime - startTime);
+                BigInteger dec = decrypt(c.getMax(), enc, key, tweak);
+                //System.out.println(i + ": " + enc + " " + dec);
+                if (!Objects.equals(dec.toString(), c.getFirst().toString())) {
+                    throw new IllegalStateException("enc (" + enc + ") != i(" + c.getFirst().toString() + ")");
+                }
+                results.add(enc);
+                sequence.add(enc);
+                //  if (enc.longValue() < 0 || enc.longValue() > range) {
+                //    throw new IllegalStateException("enc " + enc + " out of range " + range);
+                // }
+                c.setFirst(c.getFirst().add(BigInteger.ONE));
+                if (c.getFirst().toString().equals(c.getStop().toString())) {
+                    break;
+                }
             }
-            results.add(enc);
-            sequence.add(enc);
-            if (results.size() != counter + 1) {
-                System.out.println(results.size());
-                throw new IllegalStateException("duplicate enc: " + enc);
+            double average = (double) time / 10000.;
+            System.out.println(counter + " " + (average / 1000000));
+            FileOutputStream stream = new FileOutputStream("f" + counter);
+            PrintWriter writer = new PrintWriter(stream);
+            for (BigInteger bigInteger : sequence) {
+                String bits = "";
+                for (int i = 0; i < bigInteger.bitLength(); i++) {
+                  bits += bigInteger.testBit(i) ? 1 : 0;
+                }
+                writer.println(bits);
             }
-          //  if (enc.longValue() < 0 || enc.longValue() > range) {
-            //    throw new IllegalStateException("enc " + enc + " out of range " + range);
-           // }
+            writer.close();
             counter++;
-            first = first.add(BigInteger.ONE);
-            if (counter % 10000 == 0) {
-                System.out.println(first);
+            if (counter == 16) {
+                PrintWriter wr = new PrintWriter("ff16");
+                for (BigInteger bigInteger : sequence) {
+                    wr.println(bigInteger);
+                }
+                wr.close();
             }
-            if (first.toString().equals("999999999")) {
-                break;
-            }
-            if (counter == 10000) {
-                break;
-            }
+            sequence = new ArrayList<>();
         }
-        double average = time / 10000;
-        System.out.println(average / 1000 );
-        FileOutputStream stream = new FileOutputStream("out");
-        PrintWriter writer = new PrintWriter(stream);
-        for (BigInteger bigInteger: sequence) {
-            //String bits = "";
-            //for (int i = 0; i < bigInteger.bitLength(); i++) {
-              //  bits += bigInteger.testBit(i) ? 1 : 0;
-           // }
-            writer.println(bigInteger.toString());
-        }
-        writer.close();
     }
 
     // Normally FPE is for SSNs, CC#s, etc, nothing too big
@@ -185,7 +197,7 @@ public class Main {
     private static int getRoundsNumber(BigInteger a, BigInteger b) throws Exception {
         if (a.compareTo(b) < 0)
             throw new Exception("FPE rounds: a < b");
-        return 3;
+        return 5;
     }
 
     /// <summary>
@@ -197,8 +209,8 @@ public class Main {
         private byte[] mac_n_t;
 
         public FPE_Encryptor(byte[] key, BigInteger modulus, byte[] tweak) throws Exception {
-            mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secret_key = new SecretKeySpec(key, "HmacSHA256");
+            mac = Mac.getInstance("HmacMD5");
+            SecretKeySpec secret_key = new SecretKeySpec(key, "HmacMD5");
             mac.init(secret_key);
 
             byte[] modulusBinary = modulus.toByteArray();

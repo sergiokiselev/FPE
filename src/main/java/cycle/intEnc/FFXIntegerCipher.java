@@ -210,15 +210,15 @@ public class FFXIntegerCipher extends IntegerCipher {
         System.arraycopy(tweak, 0, paddedTweak, 0, tweak.length);
         paddedTweak[paddedTweak.length - 1] = (byte) roundNr;
 
-//        byte[] paddedKKey = new byte[1 + key.length + ((((-key.length - 9) % 16) + 16) % 16)];
-//        System.arraycopy(key, 0, paddedKKey, 0, key.length);
-//        paddedKKey[paddedKKey.length - 1] = (byte) roundNr;
-//        byte[] s = concatByteArrays(paddedKKey, new byte [] {60,93,-94,-128,
-//                0,127,23,43,
-//                -19,120,86,94,
-//                -62,101,14,21});
-//
-//        paddedTweak = xorByteArray(paddedTweak, s);
+        byte[] paddedKKey = new byte[1 + key.length + ((((-key.length - 9) % 16) + 16) % 16)];
+        System.arraycopy(key, 0, paddedKKey, 0, key.length);
+        paddedKKey[paddedKKey.length - 1] = (byte) roundNr;
+        byte[] s = concatByteArrays(paddedKKey, new byte [] {60,93,-94,-128,
+                0,127,23,43,
+                -19,120,86,94,
+                -62,101,14,21});
+
+        paddedTweak = xorByteArray(paddedTweak, s);
 
         // Second part of q is the actual plaintext b which is copied into a byte array of 8 bytes
         byte[] paddedB = new byte[8];

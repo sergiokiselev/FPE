@@ -1,11 +1,22 @@
 package prefix;
 
-public class InnerPrefix {
-    String weight;
-    int index;
+import java.math.BigInteger;
 
-    public InnerPrefix(String weight, int index) {
+class InnerPrefix {
+    String weight;
+    BigInteger index;
+    private BigInteger r;
+
+    InnerPrefix(String weight, BigInteger index) {
         this.weight = weight;
         this.index = index;
+    }
+
+    public BigInteger getR() {
+        return r;
+    }
+
+    public void setR(BigInteger r) {
+        this.r = r;
     }
 }

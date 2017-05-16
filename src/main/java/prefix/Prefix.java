@@ -13,18 +13,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+import static prefix.TestPrefix.THOUSAND;
+
 public class Prefix {
 
     public BigInteger encode(BigInteger number, List<InnerPrefix> prefices) {
-        BigInteger result = new BigInteger("0");
-        int e = 0;
-        while (number.toString().compareTo("0") > 0) {
-            BigInteger buf = number.mod(BigInteger.TEN);
-            number = number.divide(BigInteger.TEN);
-            int encoded = prefices.get(buf.intValue()).index;
-            result = result.add(BigInteger.TEN.pow(e).multiply(new BigInteger("" + encoded)));
-            e++;
-        }
-        return result;
+        int offset = number.add(new BigInteger(THOUSAND.toByteArray()).negate()).intValue();
+        return prefices.get(offset).getR();
     }
 }

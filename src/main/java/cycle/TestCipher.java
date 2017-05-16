@@ -111,22 +111,26 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
             intMS = new IntegerMessageSpace(c.getMax());
             FFXIntegerCipher eme2 = new FFXIntegerCipher(intMS);
             long times = 0;
-            while (true) {
-                long start = System.nanoTime();
-                BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
-                long duration = System.nanoTime() - start;
-                times += duration;
-                res.add(encrypted);
-                String bits = "";
-                for (int i = 0; i < encrypted.bitLength(); i++) {
-                    bits += encrypted.testBit(i) ? 1 : 0;
-                }
-                writer.println(bits);
-                c.setFirst(c.getFirst().add(BigInteger.ONE));
-                if (c.getStop().toString().equals(c.getFirst().toString())) {
-                    break;
-                }
-            }
+            BigInteger enc = eme2.encrypt(new BigInteger("5000000000000000"), key, tweak);
+            System.out.println(enc);
+            BigInteger dec = eme2.decrypt(enc, key, tweak);
+            System.out.println(dec);
+//            while (true) {
+//                long start = System.nanoTime();
+//                BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
+//                long duration = System.nanoTime() - start;
+//                times += duration;
+//                res.add(encrypted);
+//                String bits = "";
+//                for (int i = 0; i < encrypted.bitLength(); i++) {
+//                    bits += encrypted.testBit(i) ? 1 : 0;
+//                }
+//                writer.println(bits);
+//                c.setFirst(c.getFirst().add(BigInteger.ONE));
+//                if (c.getStop().toString().equals(c.getFirst().toString())) {
+//                    break;
+//                }
+//            }
             double average = (double)times / 1000.;
             System.out.println(counter + " " + (average / 1000000));
             writer.close();

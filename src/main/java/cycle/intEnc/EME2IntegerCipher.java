@@ -140,7 +140,7 @@ public class EME2IntegerCipher extends IntegerCipher {
 
         try {
             do {
-                System.out.println(input);
+                //System.out.println(input);
                 input = cipherFunction(input, key, tweak, encryption);
             }
             while (input.compareTo(maxMsValue) > 0); //Cycle Walking: While new value is outside of message space, encipher again

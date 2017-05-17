@@ -28,7 +28,7 @@ public class TestPrefix {
         Prefix prefix = new Prefix();
         SecretKey secretKey = AES.generateKey();
         byte[] iv = AES.generateIV(secretKey);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+        //IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         List<CycleStruct> cs = new ArrayList<>();
         cs.add(new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("9999"), new BigInteger("9999")));
 //        cs.add(new CycleStruct(new BigInteger("100000000"), new BigInteger("999999999"), new BigInteger("100100000")));
@@ -40,7 +40,7 @@ public class TestPrefix {
 //        cs.add(new CycleStruct(new BigInteger("100000000000000"), new BigInteger("999999999999999"), new BigInteger("100000000100000")));
 //        cs.add(new CycleStruct(new BigInteger("1000000000000000"), new BigInteger("9999999999999999"), new BigInteger("1000000000100000")));
         int counter = 8;
-        List<InnerPrefix> prefixes = initCipher(secretKey, ivParameterSpec, new CycleStruct(new BigInteger("1000"), new BigInteger("9999"), null));
+        List<InnerPrefix> prefixes = initCipher(secretKey, null, new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("9999"), null));
         for (CycleStruct c: cs) {
             long time = 0;
             List<BigInteger> result = new ArrayList<>();
@@ -57,9 +57,9 @@ public class TestPrefix {
             }
             System.out.println(counter + " " + ((double) time / 100000.));
             //System.out.println(result.size());
-            PrintWriter writer = new PrintWriter("p" + counter);
+            PrintWriter writer = new PrintWriter("p" + counter + "_" + 256 + "_ECB");
             for (BigInteger bigInteger : result) {
-                System.out.println(bigInteger);
+                //System.out.println(bigInteger);
                 String bits = "";
                 for (int i = 0; i < bigInteger.bitLength(); i++) {
                     bits += bigInteger.testBit(i) ? 1 : 0;

@@ -70,6 +70,10 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
             0,127,23,43,
             -19,120,86,94,
             -62,101,14,21,
+            0,127,23,43,
+            64,93,-94,-128,
+            64,93,-94,-128,
+            -19,120,86,94,
             64,93,-94,-128,
             0,127,23,43,
             -19,120,86,94,
@@ -97,40 +101,42 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
         Set<BigInteger> res = new HashSet<>();
         long counter = 8;
         List<CycleStruct> cs = new ArrayList<>();
-        //cs.add(new CycleStruct(new BigInteger("50000000"), new BigInteger("99999999"), new BigInteger("50010000")));
-        //cs.add(new CycleStruct(new BigInteger("500000000"), new BigInteger("999999999"), new BigInteger("500010000")));
-        //cs.add(new CycleStruct(new BigInteger("5000000000"), new BigInteger("9999999999"), new BigInteger("5000100000")));
-        //cs.add(new CycleStruct(new BigInteger("50000000000"), new BigInteger("99999999999"), new BigInteger("50000010000")));
+//        cs.add(new CycleStruct(new BigInteger("50000000"), new BigInteger("99999999"), new BigInteger("50010000")));
+//        cs.add(new CycleStruct(new BigInteger("500000000"), new BigInteger("999999999"), new BigInteger("500010000")));
+//        cs.add(new CycleStruct(new BigInteger("5000000000"), new BigInteger("9999999999"), new BigInteger("5000100000")));
+//        cs.add(new CycleStruct(new BigInteger("50000000000"), new BigInteger("99999999999"), new BigInteger("50000010000")));
 //        cs.add(new CycleStruct(new BigInteger("500000000000"), new BigInteger("999999999999"), new BigInteger("500000010000")));
 //        cs.add(new CycleStruct(new BigInteger("5000000000000"), new BigInteger("9999999999999"), new BigInteger("5000000010000")));
 //        cs.add(new CycleStruct(new BigInteger("50000000000000"), new BigInteger("99999999999999"), new BigInteger("50000000010000")));
 //        cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000010000")));
         cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000000040000")));
         for (CycleStruct c: cs) {
-            PrintWriter writer = new PrintWriter("e" + counter);
+            //PrintWriter writer = new PrintWriter("ff_AES_256_CBC");
+            PrintWriter writer = new PrintWriter("eme2");
             intMS = new IntegerMessageSpace(c.getMax());
-            FFXIntegerCipher eme2 = new FFXIntegerCipher(intMS);
+            //FFXIntegerCipher eme2 = new FFXIntegerCipher(intMS);
+            EME2IntegerCipher eme2 = new EME2IntegerCipher(intMS);
             long times = 0;
-            BigInteger enc = eme2.encrypt(new BigInteger("5000000000000000"), key, tweak);
-            System.out.println(enc);
-            BigInteger dec = eme2.decrypt(enc, key, tweak);
-            System.out.println(dec);
-//            while (true) {
-//                long start = System.nanoTime();
-//                BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
-//                long duration = System.nanoTime() - start;
-//                times += duration;
-//                res.add(encrypted);
-//                String bits = "";
-//                for (int i = 0; i < encrypted.bitLength(); i++) {
-//                    bits += encrypted.testBit(i) ? 1 : 0;
-//                }
-//                writer.println(bits);
-//                c.setFirst(c.getFirst().add(BigInteger.ONE));
-//                if (c.getStop().toString().equals(c.getFirst().toString())) {
-//                    break;
-//                }
-//            }
+//            BigInteger enc = eme2.encrypt(new BigInteger("5000000000000000"), key, tweak);
+//            System.out.println(enc);
+//            BigInteger dec = eme2.decrypt(enc, key, tweak);
+//            System.out.println(dec);
+            while (true) {
+                long start = System.nanoTime();
+                BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
+                long duration = System.nanoTime() - start;
+                times += duration;
+                res.add(encrypted);
+                String bits = "";
+                for (int i = 0; i < encrypted.bitLength(); i++) {
+                    bits += encrypted.testBit(i) ? 1 : 0;
+                }
+                writer.println(bits);
+                c.setFirst(c.getFirst().add(BigInteger.ONE));
+                if (c.getStop().toString().equals(c.getFirst().toString())) {
+                    break;
+                }
+            }
             double average = (double)times / 1000.;
             System.out.println(counter + " " + (average / 1000000));
             writer.close();

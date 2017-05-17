@@ -27,13 +27,13 @@ public class AES {
     }
 
     public static byte[] generateIV(SecretKey secretKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
-        Cipher encryptCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher encryptCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey);
         return encryptCipher.getIV();
     }
 
     public static byte[] encrypt(byte[] data, SecretKey aesKey, IvParameterSpec ivParameterSpec) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        Cipher encryptCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher encryptCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         encryptCipher.init(Cipher.ENCRYPT_MODE, aesKey, ivParameterSpec);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         CipherOutputStream cipherOutputStream = new CipherOutputStream(outputStream, encryptCipher);
@@ -50,7 +50,7 @@ public class AES {
     public static byte[] decrypt(byte[] data, SecretKey aesKey, IvParameterSpec ivParameterSpec){
         Cipher decryptCipher = null;
         try {
-            decryptCipher = Cipher.getInstance("AES/OFB/PKCS5Padding");
+            decryptCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             decryptCipher.init(Cipher.DECRYPT_MODE, aesKey, ivParameterSpec);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();

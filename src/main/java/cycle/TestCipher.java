@@ -101,7 +101,7 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
         Set<BigInteger> res = new HashSet<>();
         long counter = 8;
         List<CycleStruct> cs = new ArrayList<>();
-//        cs.add(new CycleStruct(new BigInteger("50000000"), new BigInteger("99999999"), new BigInteger("50010000")));
+//        cs.add(new CycleStruct(new BigInteger("50000000"), new BigInteger("99999999"), new BigInteger("99999999")));
 //        cs.add(new CycleStruct(new BigInteger("500000000"), new BigInteger("999999999"), new BigInteger("500010000")));
 //        cs.add(new CycleStruct(new BigInteger("5000000000"), new BigInteger("9999999999"), new BigInteger("5000100000")));
 //        cs.add(new CycleStruct(new BigInteger("50000000000"), new BigInteger("99999999999"), new BigInteger("50000010000")));
@@ -109,10 +109,12 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
 //        cs.add(new CycleStruct(new BigInteger("5000000000000"), new BigInteger("9999999999999"), new BigInteger("5000000010000")));
 //        cs.add(new CycleStruct(new BigInteger("50000000000000"), new BigInteger("99999999999999"), new BigInteger("50000000010000")));
 //        cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000010000")));
-        cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000000040000")));
+        Set<String> encryptedSet = new HashSet<>();
+        //cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000001000000")));
+        cs.add(new CycleStruct(new BigInteger("500000000000000000000000"), new BigInteger("999999999999999999999999"), new BigInteger("500000000000000000010000")));
         for (CycleStruct c: cs) {
             //PrintWriter writer = new PrintWriter("ff_AES_256_CBC");
-            PrintWriter writer = new PrintWriter("eme2");
+            PrintWriter writer = new PrintWriter("eme2_DES_CBC");
             intMS = new IntegerMessageSpace(c.getMax());
             //FFXIntegerCipher eme2 = new FFXIntegerCipher(intMS);
             EME2IntegerCipher eme2 = new EME2IntegerCipher(intMS);
@@ -124,6 +126,7 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
             while (true) {
                 long start = System.nanoTime();
                 BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
+                encryptedSet.add(encrypted.toString());
                 long duration = System.nanoTime() - start;
                 times += duration;
                 res.add(encrypted);
@@ -136,6 +139,13 @@ private static byte[] keyArray = new byte[]{60,93,-94,-128,
                 if (c.getStop().toString().equals(c.getFirst().toString())) {
                     break;
                 }
+            }
+            System.out.println("Encrypted set size: " + encryptedSet.size());
+            int counter11 = 0;
+            Iterator iterator = encryptedSet.iterator();
+            while (counter11 < 1000) {
+                counter11++;
+                System.out.println(iterator.next());
             }
             double average = (double)times / 1000.;
             System.out.println(counter + " " + (average / 1000000));

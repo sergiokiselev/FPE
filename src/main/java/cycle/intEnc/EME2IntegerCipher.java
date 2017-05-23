@@ -167,12 +167,12 @@ public class EME2IntegerCipher extends IntegerCipher {
         // Split input key into three subkeys
         byte[] key2 = Arrays.copyOfRange(key, 0, 16);  //key2: 16 bytes for xor of the plaintext
         byte[] key3 = Arrays.copyOfRange(key, 16, 32); //key3: 16 bytes for xor of the tweak
-        byte[] aesKey = Arrays.copyOfRange(key, 32, 40); //last 16 or 32 bytes for the actual AES encryption
+        byte[] aesKey = Arrays.copyOfRange(key, 32, key.length); //last 16 or 32 bytes for the actual AES encryption
 
 
         // Initialize AES with ECB-mode. For the tweak-part, only the encrypt mode is used, independent of enc/dec of input
-        Cipher aesCipher = Cipher.getInstance("DES/CBC/NoPadding");
-        aesCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(aesKey, "DES"));
+        Cipher aesCipher = Cipher.getInstance("AES/ECB/NoPadding");
+        aesCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(aesKey, "AES"));
 
 		
 		

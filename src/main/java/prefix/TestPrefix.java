@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class TestPrefix {
 
-    static BigInteger THOUSAND = new BigInteger("1000");
+    static BigInteger THOUSAND = new BigInteger("100");
 
     public static void main(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, FileNotFoundException {
         Prefix prefix = new Prefix();
@@ -30,7 +30,7 @@ public class TestPrefix {
         byte[] iv = AES.generateIV(secretKey);
         //IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         List<CycleStruct> cs = new ArrayList<>();
-        cs.add(new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("9999"), new BigInteger("9999")));
+        cs.add(new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("999"), new BigInteger("999")));
 //        cs.add(new CycleStruct(new BigInteger("100000000"), new BigInteger("999999999"), new BigInteger("100100000")));
 //        cs.add(new CycleStruct(new BigInteger("1000000000"), new BigInteger("9999999999"), new BigInteger("1000100000")));
 //        cs.add(new CycleStruct(new BigInteger("10000000000"), new BigInteger("99999999999"), new BigInteger("10000100000")));
@@ -40,22 +40,27 @@ public class TestPrefix {
 //        cs.add(new CycleStruct(new BigInteger("100000000000000"), new BigInteger("999999999999999"), new BigInteger("100000000100000")));
 //        cs.add(new CycleStruct(new BigInteger("1000000000000000"), new BigInteger("9999999999999999"), new BigInteger("1000000000100000")));
         int counter = 8;
-        List<InnerPrefix> prefixes = initCipher(secretKey, null, new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("9999"), null));
+        long startTime = System.nanoTime();
+        List<InnerPrefix> prefixes = initCipher(secretKey, null, new CycleStruct(new BigInteger(THOUSAND.toByteArray()), new BigInteger("999"), null));
+        long endTime = System.nanoTime();
+        long time = 0;
+        time += (endTime - startTime);
+        System.out.println(counter + " " + ((double) time / 1000000.));
         for (CycleStruct c: cs) {
-            long time = 0;
+            //long time = 0;
             List<BigInteger> result = new ArrayList<>();
             while (true) {
-                long startTime = System.nanoTime();
+                //long startTime = System.nanoTime();
                 BigInteger enc = prefix.encode(c.getFirst(), prefixes);
-                long endTime = System.nanoTime();
-                time += (endTime - startTime);
+               // long endTime = System.nanoTime();
+                //time += (endTime - startTime);
                 result.add(enc);
                 c.setFirst(c.getFirst().add(BigInteger.ONE));
                 if (c.getFirst().equals(c.getStop())) {
                     break;
                 }
             }
-            System.out.println(counter + " " + ((double) time / 100000.));
+           // System.out.println(counter + " " + ((double) time / 100000.));
             //System.out.println(result.size());
             PrintWriter writer = new PrintWriter("p" + counter + "_" + 256 + "_ECB");
             for (BigInteger bigInteger : result) {

@@ -108,10 +108,12 @@ public class TestEmeCipher {
 //        cs.add(new CycleStruct(new BigInteger("500000000000"), new BigInteger("999999999999"), new BigInteger("500000010000")));
 //        cs.add(new CycleStruct(new BigInteger("5000000000000"), new BigInteger("9999999999999"), new BigInteger("5000000010000")));
 //        cs.add(new CycleStruct(new BigInteger("50000000000000"), new BigInteger("99999999999999"), new BigInteger("50000000010000")));
-        cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000010000")));
+        //cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000000001")));
         Set<String> encryptedSet = new HashSet<>();
         //cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000001000000")));
-        //cs.add(new CycleStruct(new BigInteger("500000000000000000000000"), new BigInteger("999999999999999999999999"), new BigInteger("500000000000000000010000")));
+        cs.add(new CycleStruct(new BigInteger("50000000000000000000000000000000000000000000000000"),
+                new BigInteger("99999999999999999999999999999999999999999999999999"),
+                new BigInteger("50000000000000000000000000000000000000000000010000")));
         for (CycleStruct c: cs) {
             //PrintWriter writer = new PrintWriter("ff_AES_256_CBC");
             PrintWriter writer = new PrintWriter("eme2_AES_ECB_256_15");
@@ -126,6 +128,8 @@ public class TestEmeCipher {
             while (true) {
                 long start = System.nanoTime();
                 BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
+                BigInteger dec = eme2.decrypt(encrypted, key, tweak);
+                System.out.println("Enc " + encrypted + " Dec " + dec);
                 encryptedSet.add(encrypted.toString());
                 long duration = System.nanoTime() - start;
                 times += duration;
@@ -143,10 +147,10 @@ public class TestEmeCipher {
             System.out.println("Encrypted set size: " + encryptedSet.size());
             int counter11 = 0;
             Iterator iterator = encryptedSet.iterator();
-            while (counter11 < 1000) {
-                counter11++;
-                System.out.println(iterator.next());
-            }
+//            while (iterator.hasNext()) {
+//                counter11++;
+//                System.out.println(iterator.next());
+//            }
             double average = (double)times / 1000.;
             System.out.println(counter + " " + (average / 1000000));
             writer.close();

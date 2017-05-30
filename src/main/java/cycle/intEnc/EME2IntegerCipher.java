@@ -8,8 +8,11 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -113,8 +116,7 @@ public class EME2IntegerCipher extends IntegerCipher {
      * Encryption/Decryption takes place in a do-while-loop to be sure that the output is a value inside the given message space.<br>
      * If not, the encrypted/decrypted value is encrypted/decrypted once again and so on. This procedure is called "Cycle Walking".
      *
-     * @param plaintext  plaintext of arbtriray length. Will be padded to length of message space which is in minimum 16 bytes
-     * @param key        encryption key
+
      * @param tweak      value of the associated data of arbitrary byte length (zero or more bytes)
      * @param encryption true if this method is called for an encryption, false if for a decryption
      * @return returns a ciphertext or a plaintext, depending on encryption or decryption
@@ -168,6 +170,7 @@ public class EME2IntegerCipher extends IntegerCipher {
         byte[] key2 = Arrays.copyOfRange(key, 0, 16);  //key2: 16 bytes for xor of the plaintext
         byte[] key3 = Arrays.copyOfRange(key, 16, 32); //key3: 16 bytes for xor of the tweak
         byte[] aesKey = Arrays.copyOfRange(key, 32, key.length); //last 16 or 32 bytes for the actual AES encryption
+        byte[] key4 = Arrays.copyOfRange(key, 32, 48);
 
 
         // Initialize AES with ECB-mode. For the tweak-part, only the encrypt mode is used, independent of enc/dec of input
@@ -179,11 +182,37 @@ public class EME2IntegerCipher extends IntegerCipher {
 		/* Process the arbitrary long input tweak to get a 16-byte block tweak */
         byte[] tweakInBlockSize = new byte[16];
 
+        byte[] aesKeyInBlockSize = new byte[16];
+        List<byte[]> aesKeyArray = new ArrayList<>();
+        List<byte[]> encAesKeyArray = new ArrayList<>();
+
+        //Copy each 16 byte blocks of input tweak as element in tweakArray
+        for (int m = 0; m < aesKey.length - 15; m += 16) {
+            aesKeyArray.add(Arrays.copyOfRange(aesKey, m, m + 16));
+        }
+        //If the last block is not 16 bytes, copy the rest in tweakArray and pad it to 16 bytes
+        if (aesKey.length % 16 != 0) {
+            aesKeyArray.add(Arrays.copyOfRange(aesKey, aesKey.length - (16 - ((-aesKey.length % 16) + 16) % 16), aesKey.length));
+            aesKeyArray.set(aesKeyArray.size() - 1, padToBlocksize(aesKeyArray.get(aesKeyArray.size() - 1)));
+        }
+        key4 = multByAlpha(key4); //Recalculate key4
+
+        // xor each tweak block with key3, encrypt it and xor again with key3
+        for (byte[] a : aesKeyArray) {
+            encAesKeyArray.add(xor(aesCipher.doFinal(xor(a, key4)), key4));
+            key4 = multByAlpha(key4);
+        }
+
+        // xor each encrypted tweak block with the next one to get the final block at the end
+        for (byte[] b : encAesKeyArray) {
+            aesKeyInBlockSize = xor(aesKeyInBlockSize, b);
+        }
+
         if (tweak.length == 0)
             tweakInBlockSize = aesCipher.doFinal(key3); //If tweak is zero, encrypted key3 is taken as tweak
         else {
-            ArrayList<byte[]> tweakArray = new ArrayList<byte[]>();
-            ArrayList<byte[]> encTweakArray = new ArrayList<byte[]>();
+            List<byte[]> tweakArray = new ArrayList<>();
+            List<byte[]> encTweakArray = new ArrayList<>();
 
             //Copy each 16 byte blocks of input tweak as element in tweakArray
             for (int m = 0; m < tweak.length - 15; m += 16) {
@@ -197,21 +226,27 @@ public class EME2IntegerCipher extends IntegerCipher {
             key3 = multByAlpha(key3); //Recalculate key3
 
             // xor each tweak block with key3, encrypt it and xor again with key3
-            for (int i = 0; i < tweakArray.size(); i++) {
-                encTweakArray.add(xor(aesCipher.doFinal(xor(tweakArray.get(i), key3)), key3));
+            for (byte[] aTweakArray : tweakArray) {
+                encTweakArray.add(xor(aesCipher.doFinal(xor(aTweakArray, key3)), key3));
                 key3 = multByAlpha(key3);
             }
 
             // xor each encrypted tweak block with the next one to get the final block at the end
-            for (byte[] encTweakBlock : encTweakArray) tweakInBlockSize = xor(tweakInBlockSize, encTweakBlock);
+            for (byte[] encTweakBlock : encTweakArray) {
+                tweakInBlockSize = xor(tweakInBlockSize, encTweakBlock);
+            }
         }
+
+        //tweakInBlockSize = xor(tweakInBlockSize, aesKeyInBlockSize);
 				
 		
 		
 		/* First encryption/decryption pass	*/
 
-        if (encryption == false)
+        if (!encryption) {
             aesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(aesKey, "AES")); //if decryption switch AES to decrypt mode
+        }
+
 
         byte[] inputArray = input.toByteArray(); //Convert input BigInteger to a ByteArray
 
@@ -224,10 +259,13 @@ public class EME2IntegerCipher extends IntegerCipher {
 
         //if plaintext is not a multiple of 16 bytes, last block is incomplete
         boolean lastPlainBlockIncomplete = false;
-        if (plaintext.length % 16 != 0) lastPlainBlockIncomplete = true;
+        if (plaintext.length % 16 != 0) {
+            lastPlainBlockIncomplete = true;
+        }
 
         // Copy each 16 byte blocks of input plaintext as element in plainArray
         ArrayList<byte[]> plainArray = new ArrayList<byte[]>();
+        byte[] copyOfKey2 = key2.clone(); // Save a copy of key2
         for (int m = 0; m < plaintext.length - 15; m += 16) {
             plainArray.add(Arrays.copyOfRange(plaintext, m, m + 16));
         }
@@ -236,9 +274,7 @@ public class EME2IntegerCipher extends IntegerCipher {
             plainArray.add(Arrays.copyOfRange(plaintext, (plaintext.length - (16 - ((-plaintext.length % 16) + 16) % 16)), plaintext.length));
 
         int indexOfLastBlock = plainArray.size() - 1;
-        byte[] copyOfKey2 = key2.clone(); // Save a copy of key2
-        //byte[] copyOfKey2 = new byte[16];
-        //System.arraycopy(key2, 0, copyOfKey2, 0, key2.length);
+
 
         // xor each plaintext block (except the last one) with key2 and encrypt it
         ArrayList<byte[]> encPlainArray = new ArrayList<byte[]>();
@@ -246,10 +282,16 @@ public class EME2IntegerCipher extends IntegerCipher {
             encPlainArray.add(aesCipher.doFinal(xor(key2, plainArray.get(i))));
             key2 = multByAlpha(key2);
         }
+        /**
+         * TODO sdasdasda
+         */
         // if the last block does not have 16 bytes, pad it to blocksize (without an encryption)
-        if (lastPlainBlockIncomplete) encPlainArray.add(padToBlocksize(plainArray.get(indexOfLastBlock)));
+        if (lastPlainBlockIncomplete) {
+            encPlainArray.add(padToBlocksize(plainArray.get(indexOfLastBlock)));
+        } else {
             // else encrypt it like the other ones before
-        else encPlainArray.add(aesCipher.doFinal(xor(key2, plainArray.get(indexOfLastBlock))));
+            encPlainArray.add(aesCipher.doFinal(xor(key2, plainArray.get(indexOfLastBlock))));
+        }
 
 		
 	
@@ -257,22 +299,31 @@ public class EME2IntegerCipher extends IntegerCipher {
 
         //the denotations mp,m,m1,mc,mc1,mm of the masks are adopted from the definition of EME2
         byte[] mp, m, m1, mc, mc1, mm = null;
+        byte[] mk, mkk = null;
 
         // xor each encrypted plaintext block with the next one and the tweak and store it in mp
         mp = tweakInBlockSize.clone();
-        for (byte[] encPlainBlock : encPlainArray) mp = xor(mp, encPlainBlock);
+        mk = aesKeyInBlockSize.clone();
 
+        for (byte[] encPlainBlock : encPlainArray) {
+            mp = xor(mp, encPlainBlock);
+            mk = xor(mk, encPlainBlock);
+        }
+        mkk = aesCipher.doFinal(mk);
         // create the masks mm, mc, m m1
         if (lastPlainBlockIncomplete) {
             mm = aesCipher.doFinal(mp);
             mc = aesCipher.doFinal(mm);
+
+          //  mkk = aesCipher.doFinal(mk);
             mc1 = mc.clone();
         } else {
             mc = aesCipher.doFinal(mp);
+        //    mkk = aesCipher.doFinal(mk);
             mc1 = mc.clone();
-
         }
-        m = m1 = xor(mp, mc);
+        m = xor(mp, mc);
+
         m1 = m.clone();
 
         ArrayList<byte[]> cipherArray = new ArrayList<byte[]>();
@@ -281,39 +332,68 @@ public class EME2IntegerCipher extends IntegerCipher {
         // xor each plaintext block with mask m and store in new array
         for (int i = 1; i < indexOfLastBlock; i++) {
             if ((i - 1) % 128 > 0) {
+               // System.out.println("11");
                 m = multByAlpha(m);
                 cipherArray.add(xor(encPlainArray.get(i), m));
             } else { //recalculate mask m after every 2048 bytes
+            //    System.out.println("12");
                 mp = xor(encPlainArray.get(i), m1);
                 mc = aesCipher.doFinal(mp);
                 m = xor(mp, mc);
                 cipherArray.add(xor(mc, m1));
             }
         }
+        byte[] lastCipherBlock = treatLastBlock(aesCipher, lastPlainBlockIncomplete, plainArray, indexOfLastBlock, encPlainArray, m, m1, mm, cipherArray);
 
-        // treat the last block
-        byte[] lastCipherBlock = null;
-        if (lastPlainBlockIncomplete) {
-            byte[] truncatedMM = Arrays.copyOfRange(mm, 0, plainArray.get(indexOfLastBlock).length);
-            lastCipherBlock = xor(plainArray.get(indexOfLastBlock), truncatedMM);
-            cipherArray.add(padToBlocksize(lastCipherBlock));
-        } else if ((indexOfLastBlock - 1) % 128 > 0) {
-            m = multByAlpha(m);
-            cipherArray.add(xor(encPlainArray.get(indexOfLastBlock), m));
-        } else {
-            cipherArray.add(xor(aesCipher.doFinal(xor(m1, encPlainArray.get(indexOfLastBlock))), m1));
+        System.out.println("kk");
+        for (byte[] a: cipherArray) {
+            for (byte b: a) {
+                System.out.print(b + " ");
+            }
+            System.out.println();
         }
-
         // xor each encrypted block with the next one and set it as first element of the ciphertext array
         byte[] firstElementTemp = xor(mc1, tweakInBlockSize);
+        //firstElementTemp = xor(firstElementTemp, mkk);
+        //firstElementTemp = xor(firstElementTemp, aesKeyInBlockSize);
         for (byte[] cipherBlock : cipherArray) {
             firstElementTemp = xor(firstElementTemp, cipherBlock);
         }
+       // if (encryption) {
+            //firstElementTemp = xor(firstElementTemp, mkk);
+       // }
+
         cipherArray.set(0, firstElementTemp);
-		
-		
-		
-		/* Second encryption/decryption pass */
+        System.out.println("ll");
+        for (byte[] a: cipherArray) {
+            for (byte b: a) {
+                System.out.print(b + " ");
+            }
+            System.out.println();
+        }
+//        for (byte[] block : cipherArray) {
+//            for (byte b: block) {
+//                System.out.print(b + " ");
+//            }
+//            System.out.println();
+//        }
+        ArrayList<byte[]> encCipherArray = secondEncryption(aesCipher, lastPlainBlockIncomplete, indexOfLastBlock, copyOfKey2, cipherArray, lastCipherBlock);
+
+        // convert array list in a byte array
+        byte[] output = new byte[plaintext.length];
+        int i = 0;
+        for (byte[] encCipherBlock : encCipherArray) {
+            for (byte byteValue : encCipherBlock) {
+                output[i] = byteValue;
+                i++;
+            }
+        }
+
+        return new BigInteger(1, output); // returns a positive BigInteger
+    }
+
+    private ArrayList<byte[]> secondEncryption(Cipher aesCipher, boolean lastPlainBlockIncomplete, int indexOfLastBlock, byte[] copyOfKey2, ArrayList<byte[]> cipherArray, byte[] lastCipherBlock) throws IllegalBlockSizeException, BadPaddingException {
+        byte[] key2;/* Second encryption/decryption pass */
 
         key2 = copyOfKey2.clone(); // Restore key2 with the original value
         ArrayList<byte[]> encCipherArray = new ArrayList<byte[]>();
@@ -330,18 +410,26 @@ public class EME2IntegerCipher extends IntegerCipher {
         } else {
             encCipherArray.add(xor(aesCipher.doFinal(cipherArray.get(indexOfLastBlock)), key2));
         }
+        return encCipherArray;
+    }
 
-        // convert array list in a byte array
-        byte[] output = new byte[plaintext.length];
-        int i = 0;
-        for (byte[] encCipherBlock : encCipherArray) {
-            for (byte byteValue : encCipherBlock) {
-                output[i] = byteValue;
-                i++;
-            }
+    private byte[] treatLastBlock(Cipher aesCipher, boolean lastPlainBlockIncomplete, ArrayList<byte[]> plainArray, int indexOfLastBlock, ArrayList<byte[]> encPlainArray, byte[] m, byte[] m1, byte[] mm, ArrayList<byte[]> cipherArray) throws IllegalBlockSizeException, BadPaddingException {
+        // treat the last block
+        byte[] lastCipherBlock = null;
+        if (lastPlainBlockIncomplete) {
+        //    System.out.println("1");
+            byte[] truncatedMM = Arrays.copyOfRange(mm, 0, plainArray.get(indexOfLastBlock).length);
+            lastCipherBlock = xor(plainArray.get(indexOfLastBlock), truncatedMM);
+            cipherArray.add(padToBlocksize(lastCipherBlock));
+        } else if ((indexOfLastBlock - 1) % 128 > 0) {
+         //   System.out.println("2");
+            m = multByAlpha(m);
+            cipherArray.add(xor(encPlainArray.get(indexOfLastBlock), m));
+        } else {
+       //     System.out.println("3");
+            cipherArray.add(xor(aesCipher.doFinal(xor(m1, encPlainArray.get(indexOfLastBlock))), m1));
         }
-
-        return new BigInteger(1, output); // returns a positive BigInteger
+        return lastCipherBlock;
     }
 
 
@@ -368,14 +456,25 @@ public class EME2IntegerCipher extends IntegerCipher {
      * @return Multiplied ByteArray
      */
     private static byte[] multByAlpha(byte[] input) {
+//        System.out.println("Inn");
+//        for (byte b: input) {
+//            System.out.print(b + " ");
+//        }
+//        System.out.println();
+//        System.out.println("Out");
         if (input.length != 16) throw new IllegalArgumentException("Input must be 16 bytes");
         byte[] output = new byte[16];
 
         for (int i = 0; i < 16; i++) {
             output[i] = (byte) ((2 * input[i]) % 256);
-            if (i > 0 && input[i - 1] > 127) output[i] = (byte) (output[i] + 1);
+            if (i > 0 && input[i - 1] > 127) {
+                output[i] = (byte) (output[i] + 1);
+            }
         }
-        if (input[15] > 127) output[0] = (byte) (output[0] ^ 0x87);
+//        for (byte b: output) {
+//            System.out.print(b + " ");
+//        }
+//        System.out.println();
         return output;
     }
 

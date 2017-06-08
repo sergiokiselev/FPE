@@ -1,21 +1,11 @@
 package cycle;
 
 import cycle.intEnc.EME2IntegerCipher;
-import cycle.intEnc.FFXIntegerCipher;
-import cycle.intEnc.IntegerCipher;
-import cycle.messageSpace.IntegerMessageSpace;
-import sun.misc.BASE64Encoder;
-import util.AES;
+import cycle.intEnc.IntegerMessageSpace;
 
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**

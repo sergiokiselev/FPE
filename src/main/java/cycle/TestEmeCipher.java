@@ -1,21 +1,11 @@
 package cycle;
 
 import cycle.intEnc.EME2IntegerCipher;
-import cycle.intEnc.FFXIntegerCipher;
-import cycle.intEnc.IntegerCipher;
-import cycle.messageSpace.IntegerMessageSpace;
-import sun.misc.BASE64Encoder;
-import util.AES;
+import cycle.intEnc.IntegerMessageSpace;
 
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
@@ -111,9 +101,9 @@ public class TestEmeCipher {
         //cs.add(new CycleStruct(new BigInteger("500000000000000"), new BigInteger("999999999999999"), new BigInteger("500000000000001")));
         Set<String> encryptedSet = new HashSet<>();
         //cs.add(new CycleStruct(new BigInteger("5000000000000000"), new BigInteger("9999999999999999"), new BigInteger("5000000001000000")));
-        cs.add(new CycleStruct(new BigInteger("50000000000000000000000000000000000000000000000000"),
-                new BigInteger("99999999999999999999999999999999999999999999999999"),
-                new BigInteger("50000000000000000000000000000000000000000000010000")));
+        cs.add(new CycleStruct(new BigInteger("5000000000000000000000000000000000000000"),
+                new BigInteger("9999999999999999999999999999999999999999"),
+                new BigInteger("5000000000000000000000000000000000005000")));
         for (CycleStruct c: cs) {
             //PrintWriter writer = new PrintWriter("ff_AES_256_CBC");
             PrintWriter writer = new PrintWriter("eme2_AES_ECB_256_15");
@@ -129,7 +119,7 @@ public class TestEmeCipher {
                 long start = System.nanoTime();
                 BigInteger encrypted = eme2.encrypt(c.getFirst(), key, tweak);
                 BigInteger dec = eme2.decrypt(encrypted, key, tweak);
-                System.out.println("Enc " + encrypted + " Dec " + dec);
+               // System.out.println("Enc " + encrypted + " Dec " + dec);
                 encryptedSet.add(encrypted.toString());
                 long duration = System.nanoTime() - start;
                 times += duration;
